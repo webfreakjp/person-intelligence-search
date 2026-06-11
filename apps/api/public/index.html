@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Person Intelligence Search Platform</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <h1>Person Intelligence Search Platform</h1>
+        <p class="sub">人物インテリジェンス検索 管理コンソール</p>
+      </div>
+      <div class="topbar-right">
+        <span id="capabilityBadge" class="badge muted">接続中...</span>
+        <button id="seedButton" class="ghost" type="button">サンプル投入</button>
+      </div>
+    </header>
+
+    <nav class="tabs" id="tabs">
+      <button type="button" data-tab="search" class="active">検索</button>
+      <button type="button" data-tab="persons">人物</button>
+      <button type="button" data-tab="sources">ソース</button>
+      <button type="button" data-tab="jobs">ジョブ</button>
+      <button type="button" data-tab="schemas">スキーマ</button>
+      <button type="button" data-tab="candidates">候補レビュー</button>
+      <button type="button" data-tab="system">システム</button>
+    </nav>
+
+    <main>
+      <!-- 検索 -->
+      <section id="tab-search" class="tab-panel active">
+        <div class="card">
+          <h2>自然文検索</h2>
+          <form id="searchForm" class="search-form">
+            <input name="query" placeholder="例: Instagramフォロワー100万人以上で、環境保全の文脈で最近話題になっている人物" />
+            <button type="submit">検索</button>
+            <button type="button" id="parseOnlyButton" class="ghost">DSLのみ生成</button>
+          </form>
+          <div id="searchWarnings" class="notice" hidden></div>
+          <details id="dslDetails">
+            <summary>Search DSL</summary>
+            <pre id="dslPreview">検索を実行すると、生成された Search DSL が表示されます。</pre>
+          </details>
+        </div>
+        <div id="searchResults" class="stack"></div>
+      </section>
+
+      <!-- 人物 -->
+      <section id="tab-persons" class="tab-panel">
+        <div class="columns">
+          <div class="card">
+            <h2>人物登録</h2>
+            <form id="personForm" class="form-grid">
+              <label>氏名 *<input name="canonical_name" required /></label>
+              <label>表示名<input name="display_name" /></label>
+              <label>タイプ
+                <select name="person_type">
+                  <option value="">未設定</option>
+                  <option>actor</option><option>politician</option><option>athlete</option>
+                  <option>researcher</option><option>creator</option><option>influencer</option>
+                  <option>executive</option><option>journalist</option><option>expert</option>
+                  <option>artist</option><option>musician</option><option>entrepreneur</option>
+                  <option>public_figure</option><option>group</option><option>other</option>
+                </select>
+              </label>
+              <label class="span-2">別名（改行区切り）<textarea name="aliases" rows="2"></textarea></label>
+              <label class="span-2">プロフィール<textarea name="short_bio" rows="3"></textarea></label>
+              <fieldset class="span-2">
+                <legend>SNSアカウント（任意）</legend>
+                <div class="inline-3">
+                  <label>Platform<input name="sns_platform" placeholder="instagram" /></label>
+                  <label>Handle<input name="sns_handle" /></label>
+                  <label>Followers<input name="sns_follower_count" type="number" min="0" /></label>
+                </div>
+              </fieldset>
+              <button type="submit">登録</button>
+            </form>
+          </div>
+          <div class="card grow">
+            <div class="card-head">
+              <h2>人物一覧</h2>
+              <input id="personSearchInput" class="slim" placeholder="名前で絞り込み" />
+            </div>
+            <div id="personList" class="stack"></div>
+          </div>
+        </div>
+        <div id="personDetail" class="card" hidden></div>
+      </section>
+
+      <!-- ソース -->
+      <section id="tab-sources" class="tab-panel">
+        <div class="columns">
+          <div class="card">
+            <h2>ソース登録</h2>
+            <form id="sourceForm" class="form-grid">
+              <label>Source Type
+                <select name="source_type">
+                  <option>news</option><option>social_post</option><option>profile</option>
+                  <option>web_page</option><option>document</option><option>manual_input</option>
+                  <option>csv_import</option><option>api_import</option>
+                </select>
+              </label>
+              <label>Source Name<input name="source_name" placeholder="PR TIMES" /></label>
+              <label class="span-2">タイトル<input name="title" /></label>
+              <label class="span-2">本文<textarea name="body" rows="5"></textarea></label>
+              <label>URL<input name="url" type="url" placeholder="https://..." /></label>
+              <label>公開日時<input name="published_at" type="datetime-local" /></label>
+              <label class="span-2">対象人物（複数選択可）<select name="target_person_ids" id="targetPersonSelect" multiple></select></label>
+              <button type="submit">登録して処理</button>
+            </form>
+          </div>
+          <div class="card grow">
+            <div class="card-head">
+              <h2>ソース一覧</h2>
+              <select id="sourceStatusFilter" class="slim">
+                <option value="">すべて</option>
+                <option value="queued">queued</option>
+                <option value="processing">processing</option>
+                <option value="processed">processed</option>
+                <option value="failed">failed</option>
+              </select>
+            </div>
+            <div id="sourceList" class="stack"></div>
+          </div>
+        </div>
+        <div id="sourceDetail" class="card" hidden></div>
+      </section>
+
+      <!-- ジョブ -->
+      <section id="tab-jobs" class="tab-panel">
+        <div class="card">
+          <div class="card-head">
+            <h2>処理ジョブ</h2>
+            <div class="row-gap">
+              <select id="jobStatusFilter" class="slim">
+                <option value="">すべて</option>
+                <option>queued</option><option>running</option><option>succeeded</option>
+                <option>failed</option><option>retrying</option><option>cancelled</option>
+              </select>
+              <button id="jobReload" class="ghost" type="button">更新</button>
+            </div>
+          </div>
+          <div id="jobList" class="stack"></div>
+        </div>
+      </section>
+
+      <!-- スキーマ -->
+      <section id="tab-schemas" class="tab-panel">
+        <div class="columns">
+          <div class="card">
+            <h2>スキーマ作成</h2>
+            <form id="schemaForm" class="form-grid">
+              <label>キー *<input name="key" required pattern="[a-z][a-z0-9_]*" placeholder="talent_profile" /></label>
+              <label>名前 *<input name="name" required placeholder="タレント基本情報" /></label>
+              <label class="span-2">説明<input name="description" /></label>
+              <button type="submit">作成</button>
+            </form>
+            <hr />
+            <h2>フィールド追加</h2>
+            <form id="fieldForm" class="form-grid">
+              <label>スキーマ *<select name="schema_id" id="fieldSchemaSelect" required></select></label>
+              <label>キー *<input name="key" required pattern="[a-z][a-z0-9_]*" placeholder="height_cm" /></label>
+              <label>ラベル *<input name="label" required placeholder="身長(cm)" /></label>
+              <label>型
+                <select name="type">
+                  <option>short_text</option><option>text</option><option>number</option>
+                  <option>boolean</option><option>date</option><option>enum</option>
+                  <option>enum_multi</option><option>tag_list</option><option>url</option>
+                  <option>person_relation</option><option>organization_relation</option><option>json</option>
+                </select>
+              </label>
+              <label class="span-2">enum選択肢（カンマ区切り）<input name="enum_values" placeholder="A,B,C" /></label>
+              <label class="span-2">抽出ヒント（LLMへの指示・任意）<input name="extraction_prompt" placeholder="身長をcm単位の整数で抽出する" /></label>
+              <div class="inline-4 span-2">
+                <label class="check"><input type="checkbox" name="filterable" checked />filterable</label>
+                <label class="check"><input type="checkbox" name="searchable" checked />searchable</label>
+                <label class="check"><input type="checkbox" name="sortable" />sortable</label>
+                <label class="check"><input type="checkbox" name="embedding_target" />embedding</label>
+              </div>
+              <button type="submit">追加</button>
+            </form>
+          </div>
+          <div class="card grow">
+            <h2>定義済みスキーマ</h2>
+            <div id="schemaList" class="stack"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 候補レビュー -->
+      <section id="tab-candidates" class="tab-panel">
+        <div class="card">
+          <h2>人物候補（エンティティリンキング）</h2>
+          <p class="hint">ソースから検出されたが既存人物に確定できなかったメンションです。リンク先を選ぶか、新規人物を作成してください。</p>
+          <div id="personCandidateList" class="stack"></div>
+        </div>
+        <div class="card">
+          <h2>フィールド抽出候補</h2>
+          <p class="hint">確信度が低い・既存値と矛盾する抽出値のレビューです。適用すると人物のフィールド値が置き換わります。</p>
+          <div id="fieldCandidateList" class="stack"></div>
+        </div>
+      </section>
+
+      <!-- システム -->
+      <section id="tab-system" class="tab-panel">
+        <div class="columns">
+          <div class="card grow"><h2>Capabilities</h2><pre id="capabilitiesView"></pre></div>
+          <div class="card grow"><h2>統計</h2><pre id="statsView"></pre></div>
+        </div>
+        <div class="card">
+          <h2>検索対象フィールド</h2>
+          <pre id="searchableFieldsView"></pre>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>
+        構造化検索 + pgvector ベクトル検索<span id="ftNote"></span>のハイブリッドで検索します。
+        自然文の解析・抽出・要約には設定済みのLLMプロバイダを使用します。
+      </p>
+    </footer>
+    <div id="toast" hidden></div>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
