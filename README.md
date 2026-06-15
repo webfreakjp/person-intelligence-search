@@ -13,6 +13,7 @@
 | [データ処理パイプラインの仕組み](docs/data-pipeline-ja.md) / [検索の仕組み](docs/search-ja.md) | 非エンジニア・利用者 |
 | [APIリファレンス](docs/api-reference-ja.md) | API連携する開発者 |
 | [アーキテクチャと開発ガイド](docs/architecture-ja.md) | コードに手を入れるエンジニア |
+| [パイプライン内部仕様](docs/data-pipeline-internals-ja.md) / [検索内部仕様](docs/search-internals-ja.md) | サブシステムを実装・改修するエンジニア |
 | [実装状況・設計判断](docs/current-status-and-roadmap-ja.md) | メンテナ |
 
 ## 特徴
@@ -156,14 +157,6 @@ migrations/
   optional/pgroonga/  # PGroonga導入時のみ適用される全文検索インデックス
 ```
 
-## セキュリティ注意
-
-初期バージョンは信頼できる内部利用を前提としています。
-
-- 認証は任意の `API_KEY`（単一キー）のみ。**そのままインターネットに公開しないでください**
-- 実在人物の機微情報を投入する場合は、アクセス制御・監査ログ等を整備した環境で利用してください
-- 実LLM/embeddingプロバイダ利用時は、ソース本文が外部APIに送信されます。PIIポリシーを確認してください
-
 ## ライセンス
 
-TBD（決定後に LICENSE ファイルを追加してください）。
+TBD
