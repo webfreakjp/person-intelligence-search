@@ -3,7 +3,8 @@
   "version": "0.2.0",
   "private": true,
   "type": "module",
-  "description": "Person Intelligence Search Platform - open-source person-centric knowledge base and hybrid search",
+  "description": "Person Intelligence Search Platform - source-available person-centric knowledge base and hybrid search",
+  "license": "AGPL-3.0-only",
   "scripts": {
     "start": "node apps/api/server.ts",
     "dev": "node --watch apps/api/server.ts",
