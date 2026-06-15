@@ -191,6 +191,39 @@ const PERSON_TYPES = [
 ];
 const RELATIONSHIP_TYPES = ['member_of', 'affiliated_with', 'colleague', 'collaborator', 'family', 'manager', 'co_appeared', 'other'];
 const SENTIMENTS = ['positive', 'neutral', 'negative', 'mixed', 'unknown'];
+// Common SNS platforms / context roles. Open sets stored as free text; these are
+// the suggested values shown in dropdowns (add a value here to offer a new one).
+const SNS_PLATFORMS = [
+  'instagram',
+  'x',
+  'tiktok',
+  'youtube',
+  'facebook',
+  'threads',
+  'linkedin',
+  'note',
+  'line',
+  'github',
+  'website',
+  'other'
+];
+const CONTEXT_ROLES = [
+  'main_subject',
+  'actor',
+  'speaker',
+  'target',
+  'mentioned_only',
+  'related_person',
+  'author',
+  'critic',
+  'criticized',
+  'winner',
+  'nominee',
+  'victim',
+  'suspect',
+  'unknown'
+];
+const optionsHtml = (values, current) => values.map((v) => `<option ${current === v ? 'selected' : ''}>${v}</option>`).join('');
 
 async function showPersonDetail(personId) {
   const [person, fieldDefs, relationships, allPersons] = await Promise.all([
@@ -206,8 +239,7 @@ async function showPersonDetail(personId) {
     .filter((p) => p.id !== personId)
     .map((p) => `<option value="${p.id}">${esc(p.display_name ?? p.canonical_name)}</option>`)
     .join('');
-  const typeOptions = PERSON_TYPES.map((t) => `<option ${person.person_type === t ? 'selected' : ''}>${t}</option>`).join('');
-  const sentimentOptions = (current) => SENTIMENTS.map((s) => `<option ${current === s ? 'selected' : ''}>${s}</option>`).join('');
+  const typeOptions = optionsHtml(PERSON_TYPES, person.person_type);
 
   const aliases = person.aliases
     .map(
@@ -248,7 +280,8 @@ async function showPersonDetail(personId) {
         <form class="inline-edit" data-context-form="${context.id}" hidden>
           <textarea name="context_text" rows="3">${esc(context.context_text ?? '')}</textarea>
           <input name="context_tags" value="${esc((context.context_tags ?? []).join(', '))}" placeholder="タグ（カンマ区切り）" />
-          <select name="sentiment">${sentimentOptions(context.sentiment)}</select>
+          <label>役割<select name="role">${optionsHtml(CONTEXT_ROLES, context.role)}</select></label>
+          <label>感情<select name="sentiment">${optionsHtml(SENTIMENTS, context.sentiment)}</select></label>
           <button type="submit" class="small">保存</button>
         </form>
       </div>`;
@@ -306,6 +339,12 @@ async function showPersonDetail(personId) {
     <div class="columns">
       <div>
         <h3>SNS</h3><ul class="plain-list">${sns || '<li class="meta">未登録</li>'}</ul>
+        <form id="snsAddForm" class="inline-edit">
+          <select name="platform"><option value="">プラットフォーム...</option>${optionsHtml(SNS_PLATFORMS)}</select>
+          <input name="handle" placeholder="handle" />
+          <input name="follower_count" type="number" min="0" placeholder="フォロワー数" />
+          <button type="submit" class="small">SNS追加</button>
+        </form>
         <h3>関係（グループ・所属など）</h3>
         <ul class="plain-list">${relationshipList || '<li class="meta">なし</li>'}</ul>
         <form id="relationshipAddForm" class="inline-edit">
@@ -424,6 +463,19 @@ async function showPersonDetail(personId) {
         }),
         '関係を追加しました'
       );
+    } else if (form.id === 'snsAddForm') {
+      if (!data.get('platform')) return toast('プラットフォームを選んでください', true);
+      run(
+        api(`/v1/persons/${personId}/sns`, {
+          method: 'POST',
+          body: JSON.stringify({
+            platform: data.get('platform'),
+            handle: data.get('handle') || undefined,
+            follower_count: data.get('follower_count') ? Number(data.get('follower_count')) : undefined
+          })
+        }),
+        'SNSアカウントを追加しました'
+      );
     } else if (form.dataset.snsForm) {
       run(
         api(`/v1/persons/${personId}/sns/${form.dataset.snsForm}`, {
@@ -444,6 +496,7 @@ async function showPersonDetail(personId) {
               .split(',')
               .map((t) => t.trim())
               .filter(Boolean),
+            role: data.get('role'),
             sentiment: data.get('sentiment')
           })
         }),

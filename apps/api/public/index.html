@@ -70,7 +70,15 @@
               <fieldset class="span-2">
                 <legend>SNSアカウント（任意）</legend>
                 <div class="inline-3">
-                  <label>Platform<input name="sns_platform" placeholder="instagram" /></label>
+                  <label>Platform
+                    <select name="sns_platform">
+                      <option value="">—</option>
+                      <option>instagram</option><option>x</option><option>tiktok</option>
+                      <option>youtube</option><option>facebook</option><option>threads</option>
+                      <option>linkedin</option><option>note</option><option>line</option>
+                      <option>github</option><option>website</option><option>other</option>
+                    </select>
+                  </label>
                   <label>Handle<input name="sns_handle" /></label>
                   <label>Followers<input name="sns_follower_count" type="number" min="0" /></label>
                 </div>
