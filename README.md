@@ -8,14 +8,6 @@
 → 構造化 + ベクトル + 全文（任意）のハイブリッド検索 → 根拠つき検索結果
 ```
 
-| ドキュメント | 対象読者 |
-| --- | --- |
-| [データ処理パイプラインの仕組み](docs/data-pipeline-ja.md) / [検索の仕組み](docs/search-ja.md) | 非エンジニア・利用者 |
-| [APIリファレンス](docs/api-reference-ja.md) | API連携する開発者 |
-| [アーキテクチャと開発ガイド](docs/architecture-ja.md) | コードに手を入れるエンジニア |
-| [パイプライン内部仕様](docs/data-pipeline-internals-ja.md) / [検索内部仕様](docs/search-internals-ja.md) | サブシステムを実装・改修するエンジニア |
-| [実装状況・設計判断](docs/current-status-and-roadmap-ja.md) | メンテナ |
-
 ## 特徴
 
 - **人物中心の知識ベース** — 人物・別名・プロフィール・SNSアカウント/メトリクス・出典つきコンテキスト・要約
@@ -91,7 +83,7 @@ docker compose up --build
 
 ## API
 
-主要エンドポイント（詳細は [APIリファレンス](docs/api-reference-ja.md)）:
+主要エンドポイント:
 
 ```http
 POST /v1/sources                 # 統一ソース登録（dedup / versioning / ジョブ投入）
