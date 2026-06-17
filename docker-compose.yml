@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: docker/db.Dockerfile
-    image: person-db-postgres:local
+    image: person-intelligence-search-postgres:local
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-persondb}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-persondb}
@@ -21,7 +21,7 @@ services:
 
   api:
     build: .
-    image: person-db:local
+    image: person-intelligence-search:local
     environment: &app_env
       HOST: 0.0.0.0
       PORT: 3000
@@ -50,7 +50,7 @@ services:
     restart: unless-stopped
 
   worker:
-    image: person-db:local
+    image: person-intelligence-search:local
     build: .
     command: ["node", "apps/worker/server.ts"]
     environment: *app_env

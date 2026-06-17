@@ -1,6 +1,6 @@
 {
-  "name": "person-db",
-  "version": "0.2.0",
+  "name": "person-intelligence-search",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "description": "Person Intelligence Search Platform - source-available person-centric knowledge base and hybrid search",
