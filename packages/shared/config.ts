@@ -21,6 +21,11 @@ const EnvSchema = z.object({
     .int()
     .positive()
     .default(5 * 1024 * 1024),
+  MAX_UPLOAD_BYTES: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(25 * 1024 * 1024),
   API_KEY: z.string().default(''),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
 
@@ -53,7 +58,13 @@ const EnvSchema = z.object({
   INLINE_WORKER: booleanish.optional(),
 
   AUTO_CREATE_PERSONS: booleanish.default(false),
-  AUTO_APPLY_CONFIDENCE: z.coerce.number().min(0).max(1).default(0.8)
+  AUTO_APPLY_CONFIDENCE: z.coerce.number().min(0).max(1).default(0.8),
+
+  UNSTRUCTURED_API_URL: z.string().default('http://localhost:8000/general/v0/general'),
+  UNSTRUCTURED_API_KEY: z.string().default(''),
+  UNSTRUCTURED_STRATEGY: z.enum(['auto', 'fast', 'hi_res', 'ocr_only']).default('auto'),
+  UNSTRUCTURED_LANGUAGES: z.string().default(''),
+  UNSTRUCTURED_TIMEOUT_MS: z.coerce.number().int().min(1000).default(120000)
 });
 
 const env = EnvSchema.parse(process.env);
@@ -72,6 +83,7 @@ export const config = {
   host: env.HOST,
   port: env.PORT,
   maxBodyBytes: env.MAX_BODY_BYTES,
+  maxUploadBytes: env.MAX_UPLOAD_BYTES,
   apiKey: env.API_KEY,
   logLevel: env.LOG_LEVEL,
 
@@ -100,7 +112,15 @@ export const config = {
   inlineWorker: env.INLINE_WORKER ?? env.STORE_PROVIDER === 'pglite',
 
   autoCreatePersons: env.AUTO_CREATE_PERSONS,
-  autoApplyConfidence: env.AUTO_APPLY_CONFIDENCE
+  autoApplyConfidence: env.AUTO_APPLY_CONFIDENCE,
+
+  unstructuredApiUrl: env.UNSTRUCTURED_API_URL,
+  unstructuredApiKey: env.UNSTRUCTURED_API_KEY,
+  unstructuredStrategy: env.UNSTRUCTURED_STRATEGY,
+  unstructuredLanguages: env.UNSTRUCTURED_LANGUAGES.split(',')
+    .map((language) => language.trim())
+    .filter(Boolean),
+  unstructuredTimeoutMs: env.UNSTRUCTURED_TIMEOUT_MS
 } as const;
 
 export type AppConfig = typeof config;

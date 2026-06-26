@@ -118,6 +118,23 @@
               <label class="span-2">対象人物（複数選択可）<select name="target_person_ids" id="targetPersonSelect" multiple></select></label>
               <button type="submit">登録して処理</button>
             </form>
+            <hr />
+            <h2>PDF登録</h2>
+            <form id="sourceUploadForm" class="form-grid">
+              <label class="span-2">PDFファイル *<input name="file" type="file" accept="application/pdf,.pdf" required /></label>
+              <label class="span-2">タイトル<input name="title" /></label>
+              <label>Source Name<input name="source_name" placeholder="応募者提出書類" /></label>
+              <label>URL<input name="url" type="url" placeholder="https://..." /></label>
+              <label>Strategy
+                <select name="strategy">
+                  <option>auto</option><option>fast</option><option>hi_res</option><option>ocr_only</option>
+                </select>
+              </label>
+              <label>OCR Languages<input name="languages" placeholder="jpn,eng" /></label>
+              <label>公開日時<input name="published_at" type="datetime-local" /></label>
+              <label class="span-2">対象人物（複数選択可）<select name="target_person_ids" id="pdfTargetPersonSelect" multiple></select></label>
+              <button type="submit">PDFを抽出して登録</button>
+            </form>
           </div>
           <div class="card grow">
             <div class="card-head">

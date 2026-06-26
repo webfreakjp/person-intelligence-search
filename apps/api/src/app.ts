@@ -1,3 +1,4 @@
+import fastifyMultipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
 import Fastify, { type FastifyInstance, type FastifyRequest } from 'fastify';
 import { ZodError } from 'zod';
@@ -67,6 +68,12 @@ export async function buildApp(ctx: AppContext): Promise<FastifyInstance> {
 
   app.setNotFoundHandler((_request, reply) => reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'Not found', details: [] } }));
 
+  await app.register(fastifyMultipart, {
+    limits: {
+      fileSize: config.maxUploadBytes,
+      files: 1
+    }
+  });
   await app.register(fastifyStatic, { root: config.publicDir, prefix: '/' });
 
   app.addHook('onRequest', async (request) => {

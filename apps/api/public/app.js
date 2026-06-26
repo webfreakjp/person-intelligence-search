@@ -30,6 +30,16 @@ async function api(path, options = {}) {
   return data;
 }
 
+async function apiForm(path, formData) {
+  const response = await fetch(path, { method: 'POST', body: formData });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const details = (data.error?.details ?? []).map((d) => `${d.field}: ${d.message}`).join(', ');
+    throw new Error(`${data.error?.message ?? 'API error'}${details ? ` (${details})` : ''}`);
+  }
+  return data;
+}
+
 const esc = (value) =>
   String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const fmtDate = (value) => (value ? new Date(value).toLocaleString('ja-JP') : '-');
@@ -559,9 +569,11 @@ $('#personForm').addEventListener('submit', async (event) => {
 // ---------- sources ----------
 async function fillTargetPersons() {
   const data = await api('/v1/persons?limit=100');
-  $('#targetPersonSelect').innerHTML = data.results
+  const options = data.results
     .map((person) => `<option value="${person.id}">${esc(person.display_name ?? person.canonical_name)}</option>`)
     .join('');
+  $('#targetPersonSelect').innerHTML = options;
+  $('#pdfTargetPersonSelect').innerHTML = options;
 }
 
 async function loadSourcesTab() {
@@ -611,6 +623,7 @@ async function showSourceDetail(sourceId) {
         `<li>${esc(candidate.field_definition_id.slice(0, 8))}... ${statusBadge(candidate.status)} <span class="meta">conf ${candidate.confidence ?? '-'}</span></li>`
     )
     .join('');
+  const extraction = source.metadata?.document_extraction;
   panel.innerHTML = `
     <div class="item-head"><h2>${esc(source.title || '(タイトルなし)')}</h2>
       <div class="row-gap">
@@ -619,6 +632,7 @@ async function showSourceDetail(sourceId) {
       </div>
     </div>
     <p class="meta">${esc(source.source_type)} / ${esc(source.source_subtype ?? '')} ・ ${statusBadge(source.processing_status)} ・ ${fmtDate(source.published_at)} ・ <span class="mono">${source.id}</span></p>
+    ${extraction ? `<p class="meta">document extraction: ${esc(extraction.extractor)} / ${esc(extraction.strategy)} / elements ${esc(extraction.element_count ?? '-')} / pages ${esc(extraction.page_count ?? '-')}</p>` : ''}
     <pre>${esc((source.body ?? '').slice(0, 1200))}</pre>
     <div class="columns">
       <div><h3>メンション</h3><div>${mentions || '<span class="meta">なし</span>'}</div>
@@ -658,6 +672,29 @@ $('#sourceForm').addEventListener('submit', async (event) => {
   try {
     const result = await api('/v1/sources', { method: 'POST', body: JSON.stringify(body) });
     toast(result.duplicate ? '同一ソースが既に存在します' : 'ソースを登録しました（処理キュー投入済み）');
+    event.target.reset();
+    setTimeout(() => loadSourceList().catch(() => {}), 800);
+  } catch (error) {
+    toast(error.message, true);
+  }
+});
+
+$('#sourceUploadForm').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const form = new FormData(event.currentTarget);
+  const publishedAt = form.get('published_at') ? new Date(form.get('published_at').toString()).toISOString() : '';
+  if (publishedAt) form.set('published_at', publishedAt);
+  else form.delete('published_at');
+  if (!form.get('languages')?.toString().trim()) form.delete('languages');
+  if (!form.get('title')?.toString().trim()) form.delete('title');
+  if (!form.get('source_name')?.toString().trim()) form.delete('source_name');
+  if (!form.get('url')?.toString().trim()) form.delete('url');
+  form.set('source_type', 'document');
+  form.delete('target_person_ids');
+  for (const option of $('#pdfTargetPersonSelect').selectedOptions) form.append('target_person_ids', option.value);
+  try {
+    const result = await apiForm('/v1/sources/upload', form);
+    toast(result.duplicate ? '同一PDF由来のソースが既に存在します' : 'PDFを抽出して登録しました');
     event.target.reset();
     setTimeout(() => loadSourceList().catch(() => {}), 800);
   } catch (error) {

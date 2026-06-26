@@ -40,8 +40,14 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       API_KEY: ${API_KEY:-}
+      MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-26214400}
       DEFAULT_LANGUAGE: ${DEFAULT_LANGUAGE:-ja}
       WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-2}
+      UNSTRUCTURED_API_URL: ${UNSTRUCTURED_API_URL:-http://unstructured:8000/general/v0/general}
+      UNSTRUCTURED_API_KEY: ${UNSTRUCTURED_API_KEY:-}
+      UNSTRUCTURED_STRATEGY: ${UNSTRUCTURED_STRATEGY:-auto}
+      UNSTRUCTURED_LANGUAGES: ${UNSTRUCTURED_LANGUAGES:-}
+      UNSTRUCTURED_TIMEOUT_MS: ${UNSTRUCTURED_TIMEOUT_MS:-120000}
     ports:
       - "${PORT:-3000}:3000"
     depends_on:
@@ -57,6 +63,13 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    restart: unless-stopped
+
+  unstructured:
+    image: downloads.unstructured.io/unstructured-io/unstructured-api:latest
+    profiles: ["documents"]
+    ports:
+      - "${UNSTRUCTURED_PORT:-8000}:8000"
     restart: unless-stopped
 
 volumes:

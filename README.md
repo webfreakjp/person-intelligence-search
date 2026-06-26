@@ -78,6 +78,10 @@ docker compose up --build
 | `INLINE_WORKER` | pglite時true | APIプロセス内でジョブを処理（Worker分離不要のモード） |
 | `AUTO_CREATE_PERSONS` | `false` | 未知の人物メンションから自動で人物を作成（既定はレビュー候補化） |
 | `API_KEY` | （無効） | 設定すると `/v1` が `X-API-Key` / Bearer 認証必須に |
+| `MAX_UPLOAD_BYTES` | `26214400` | PDF等のアップロード上限 |
+| `UNSTRUCTURED_API_URL` | `http://localhost:8000/general/v0/general` | PDF等をテキスト化するUnstructured APIのURL |
+| `UNSTRUCTURED_STRATEGY` | `auto` | PDF/Image処理戦略（`auto` / `fast` / `hi_res` / `ocr_only`） |
+| `UNSTRUCTURED_LANGUAGES` | 空 | OCR言語。必要時のみ `jpn,eng` などを指定 |
 
 モックモードはありません。embeddingモデルやプロバイダを切り替えたら `npm run reembed` で既存データのベクトルを再生成してください（異なるモデルのベクトルは互換性がありません）。LLM呼び出しが失敗した場合、検索は明示的なエラーを返し、取り込みジョブはバックオフ付きでリトライされます（品質の落ちたフォールバックで黙って動き続けることはありません）。
 
@@ -87,6 +91,7 @@ docker compose up --build
 
 ```http
 POST /v1/sources                 # 統一ソース登録（dedup / versioning / ジョブ投入）
+POST /v1/sources/upload          # PDF等のmultipartアップロード（Unstructuredで抽出して登録）
 GET  /v1/sources/{id}/extractions
 POST /v1/sources/{id}/reprocess
 
@@ -116,6 +121,34 @@ curl -s localhost:3000/v1/search/persons -H 'content-type: application/json' -d 
 ```
 
 レスポンスには `score`（fusion値）、`score_parts`、`matched_reasons`、`matched_contexts`（出典つき根拠）、`dsl`、`search_capabilities`、`warnings` が含まれます。
+
+## PDFアップロード（Unstructured連携）
+
+ローカルでUnstructured APIを起動すると、管理コンソールの「ソース」タブまたはAPIからPDFをそのまま登録できます。抽出したテキストを既存の `POST /v1/sources` と同じパイプラインへ流すため、人物抽出・フィールド抽出・検索インデックス更新は既存処理を使います。PDF原本はDBに保存せず、ファイル名・サイズ・抽出設定などのメタデータだけを保持します。
+
+単体起動:
+
+```bash
+docker run -p 8000:8000 --rm --name unstructured-api \
+  downloads.unstructured.io/unstructured-io/unstructured-api:latest
+```
+
+composeでまとめて起動:
+
+```bash
+docker compose --profile documents up --build
+```
+
+API例:
+
+```bash
+curl -s localhost:3000/v1/sources/upload \
+  -F 'file=@resume.pdf' \
+  -F 'source_type=document' \
+  -F 'title=応募者A 職務経歴書' \
+  -F 'strategy=auto' \
+  -F 'languages=jpn,eng'
+```
 
 ## 開発
 
